@@ -134,6 +134,8 @@ private[history] abstract class ApplicationHistoryProvider {
    */
   def getApplicationInfo(appId: String): Option[ApplicationInfo]
 
+  def getAppId(appPath: String): String
+
   /**
    * @return html text to display when the application list is empty
    */

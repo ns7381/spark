@@ -303,6 +303,19 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
     }
   }
 
+  def getAppId(appPath: String): String = {
+    if (fs.exists(new Path(logDir, appPath))) {
+      val statuses = fs.listStatus(new Path(logDir, appPath))
+      if (statuses.length == 1) {
+        statuses(0).getPath.getName.replaceAll(".inprogress", "")
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+  }
+
   override def getEventLogsUnderProcess(): Int = pendingReplayTasksCount.get()
 
   override def getLastUpdatedTime(): Long = lastScanTime.get()
@@ -428,8 +441,14 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
     try {
       val newLastScanTime = clock.getTimeMillis()
       logDebug(s"Scanning $logDir with lastScanTime==$lastScanTime")
-
-      val updated = Option(fs.listStatus(new Path(logDir))).map(_.toSeq).getOrElse(Nil)
+      // List all files in logDir, include file in logDir's subdirectories
+      val fileIter = fs.listFiles(new Path(logDir), true)
+      import scala.collection.mutable.ArrayBuffer
+      val statuses = new ArrayBuffer[FileStatus]
+      while (fileIter.hasNext) {
+        statuses += fileIter.next()
+      }
+      val updated = Option(statuses).map(_.toSeq).getOrElse(Nil)
         .filter { entry =>
           !entry.isDirectory() &&
             // FsHistoryProvider used to generate a hidden file which can't be read.  Accidentally
@@ -688,7 +707,7 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
       ((!appCompleted && fastInProgressParsing) || reparseChunkSize > 0)
 
     val bus = new ReplayListenerBus()
-    val listener = new AppListingListener(fileStatus, clock, shouldHalt)
+    val listener = new AppListingListener(logDir, fileStatus, clock, shouldHalt)
     bus.addListener(listener)
 
     logInfo(s"Parsing $logPath for listing data...")
@@ -1086,12 +1105,16 @@ private[history] class ApplicationInfoWrapper(
 }
 
 private[history] class AppListingListener(
+    logDir: String,
     log: FileStatus,
     clock: Clock,
     haltEnabled: Boolean) extends SparkListener {
 
   private val app = new MutableApplicationInfo()
-  private val attempt = new MutableAttemptInfo(log.getPath().getName(), log.getLen())
+
+  private val relativePath = log.getPath.toUri.getPath.replaceFirst(
+    new Path(logDir).toUri.getPath, ".")
+  private val attempt = new MutableAttemptInfo(relativePath, log.getLen())
 
   private var gotEnvUpdate = false
   private var halted = false

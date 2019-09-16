@@ -164,7 +164,16 @@ private[spark] object UIUtils extends Logging {
       request: HttpServletRequest,
       basePath: String = "",
       resource: String = ""): String = {
-    uiRoot(request) + basePath + resource
+    val userParam = request.getParameter("user")
+    if ((basePath == "/" || basePath.startsWith("/history/application_")) && userParam != null) {
+      uiRoot(request) + basePath + "?user=" + userParam + resource
+    } else if (basePath.startsWith("/?") && userParam != null) {
+      uiRoot(request) + basePath + "&user=" + userParam + resource
+    } else if (basePath == "/" && userParam == null) {
+      "javascript:void(0)"
+    } else {
+      uiRoot(request) + basePath + resource
+    }
   }
 
   def commonHeaderNodes(request: HttpServletRequest): Seq[Node] = {
@@ -293,7 +302,7 @@ private[spark] object UIUtils extends Logging {
                 <a style="text-decoration: none" href={prependBaseUri(request, "/")}>
                   <img src={prependBaseUri(request, "/static/spark-logo-77x50px-hd.png")} />
                   <span class="version"
-                        style="margin-right: 15px;">{org.apache.spark.SPARK_VERSION}</span>
+                        style="margin-right: 15px;">2.4.3</span>
                 </a>
                 {title}
               </h3>

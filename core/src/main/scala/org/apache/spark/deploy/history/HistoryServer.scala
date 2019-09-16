@@ -78,13 +78,19 @@ class HistoryServer(
         return
       }
 
-      val appId = parts(1)
-      val attemptId = if (parts.length >= 3) Some(parts(2)) else None
+      val appId = if (parts(1) == "app-path") {
+        val appPath = Option(req.getPathInfo()).getOrElse("").replaceFirst("/app-path", ".")
+        provider.getAppId(appPath)
+      } else {
+        parts(1)
+      }
+      val attemptId = None
 
       // Since we may have applications with multiple attempts mixed with applications with a
       // single attempt, we need to try both. Try the single-attempt route first, and if an
       // error is raised, then try the multiple attempt route.
-      if (!loadAppUi(appId, None) && (!attemptId.isDefined || !loadAppUi(appId, attemptId))) {
+      if (appId == "" || (!loadAppUi(appId, None) && (!attemptId.isDefined ||
+        !loadAppUi(appId, attemptId)))) {
         val msg = <div class="row-fluid">Application {appId} not found.</div>
         res.setStatus(HttpServletResponse.SC_NOT_FOUND)
         UIUtils.basicSparkPage(req, msg, "Not Found").foreach { n =>
@@ -97,7 +103,7 @@ class HistoryServer(
       // the app's UI, and all we need to do is redirect the user to the same URI that was
       // requested, and the proper data should be served at that point.
       // Also, make sure that the redirect url contains the query string present in the request.
-      val requestURI = req.getRequestURI + Option(req.getQueryString).map("?" + _).getOrElse("")
+      val requestURI = "/history/" + appId + Option(req.getQueryString).map("?" + _).getOrElse("")
       res.sendRedirect(res.encodeRedirectURL(requestURI))
     }
 

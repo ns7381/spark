@@ -110,9 +110,20 @@ $(document).ready(function() {
 
     appParams = {
       limit: appLimit,
-      status: (requestedIncomplete ? "running" : "completed")
+      status: (requestedIncomplete ? "running" : "completed"),
+      sparkUser: getQueryVariable("user")
     };
-
+    function getQueryVariable(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split('&');
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split('=');
+            if (decodeURIComponent(pair[0]) == variable) {
+                return decodeURIComponent(pair[1]);
+            }
+        }
+        console.log('Query variable %s not found', variable);
+    }
     $.getJSON(uiRoot + "/api/v1/applications", appParams, function(response,status,jqXHR) {
       var array = [];
       var hasMultipleAttempts = false;

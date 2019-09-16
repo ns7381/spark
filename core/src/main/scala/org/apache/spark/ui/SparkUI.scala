@@ -170,7 +170,7 @@ private[spark] object SparkUI {
       appName: String,
       basePath: String,
       startTime: Long,
-      appSparkVersion: String = org.apache.spark.SPARK_VERSION): SparkUI = {
+      appSparkVersion: String = "2.4.3"): SparkUI = {
 
     new SparkUI(store, sc, conf, securityManager, appName, basePath, startTime, appSparkVersion)
   }

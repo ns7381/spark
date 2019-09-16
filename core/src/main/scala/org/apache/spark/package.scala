@@ -88,7 +88,7 @@ package object spark {
     }
   }
 
-  val SPARK_VERSION = SparkBuildInfo.spark_version
+  val SPARK_VERSION = "2.4.3"
   val SPARK_BRANCH = SparkBuildInfo.spark_branch
   val SPARK_REVISION = SparkBuildInfo.spark_revision
   val SPARK_BUILD_USER = SparkBuildInfo.spark_build_user

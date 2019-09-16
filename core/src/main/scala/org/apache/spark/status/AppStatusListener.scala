@@ -48,7 +48,7 @@ private[spark] class AppStatusListener(
 
   import config._
 
-  private var sparkVersion = SPARK_VERSION
+  private var sparkVersion = "2.4.3"
   private var appInfo: v1.ApplicationInfo = null
   private var appSummary = new AppSummary(0, 0)
   private var coresPerTask: Int = 1

@@ -30,7 +30,8 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
       @DefaultValue("3000-01-01") @QueryParam("maxDate") maxDate: SimpleDateParam,
       @DefaultValue("2010-01-01") @QueryParam("minEndDate") minEndDate: SimpleDateParam,
       @DefaultValue("3000-01-01") @QueryParam("maxEndDate") maxEndDate: SimpleDateParam,
-      @QueryParam("limit") limit: Integer)
+      @QueryParam("limit") limit: Integer,
+      @QueryParam("sparkUser") sparkUser: String)
   : Iterator[ApplicationInfo] = {
 
     val numApps = Option(limit).map(_.toInt).getOrElse(Integer.MAX_VALUE)
@@ -43,7 +44,8 @@ private[v1] class ApplicationListResource extends ApiRequestContext {
       // keep the app if *any* attempts fall in the right time window
       ((!anyRunning && includeCompleted) || (anyRunning && includeRunning)) &&
       app.attempts.exists { attempt =>
-        isAttemptInRange(attempt, minDate, maxDate, minEndDate, maxEndDate, anyRunning)
+        isAttemptInRange(attempt, minDate, maxDate, minEndDate, maxEndDate, anyRunning) &&
+          attempt.sparkUser == sparkUser
       }
     }.take(numApps)
   }
